@@ -1,6 +1,7 @@
 module WebLogParse (parseAccessLogEntry,
                     run,
                     AccessLogEntry,
+                    ErrorLogEntry,
                     IP,
                     UserID,
                     HttpStatus,
@@ -39,6 +40,9 @@ data Request = Request {
   method :: RequestMethod
   , url :: String
   } deriving (Eq, Show)
+
+data ErrorLogEntry = ErrorLogEntry String
+                     deriving (Show)
 
 data AccessLogEntry = AccessLogEntry {
   ip :: IP
@@ -133,6 +137,10 @@ parseUserID = do { user <- identifier
                      }
               <?> "user id"
 
+{-
+From the 'Running a parser' section in the Parsec documentation - https://web.archive.org/web/20140529211116/http://legacy.cs.uu.nl/daan/download/parsec/parsec.html#identStart
+modified to return the value that is parsed, rather than IO
+-}
 run :: Show a => Parser a -> String -> a
 run p input
         = case (parse p "" input) of
