@@ -1,11 +1,13 @@
 module WebLogParse (parseAccessLogEntry,
                     run,
+                    getUrlFilename,
                     AccessLogEntry (user, time, request, status, size),
                     ErrorLogEntry,
                     IP,
+                    URL,
                     UserID,
                     HttpStatus,
-                    Request,
+                    Request (method, url),
                     RequestMethod) where
 
 import Text.ParserCombinators.Parsec
@@ -14,6 +16,7 @@ import Text.Parsec.Language (haskellDef)
 import Data.Time
 import Data.Time.Format
 import Data.List (intercalate)
+import Data.Text (pack, splitOn, unpack)
 
 -- Use the Parsec Language library to create a function for parsing identifiers (user names in the access logs)
 lexer = Token.makeTokenParser haskellDef
@@ -28,6 +31,8 @@ data HttpStatus = HttpStatus Int
 data UserID = UserID String
               deriving (Ord, Eq, Show)
 
+type URL = String
+
 {- The 'RequestMethod' data below is based on the 'Method' data in chapter 16 of Real World Haskell, 'Parsing an HTTP Request' section
 http://book.realworldhaskell.org/read/using-parsec.html
 extended from the original to include all the request methods, rather than just GET and POST -}
@@ -39,7 +44,7 @@ http://book.realworldhaskell.org/read/using-parsec.html
 modified to only store a request method and url -}
 data Request = Request {
   method :: RequestMethod
-  , url :: String
+  , url :: URL
   } deriving (Eq, Show)
 
 data ErrorLogEntry = ErrorLogEntry String
@@ -53,6 +58,9 @@ data AccessLogEntry = AccessLogEntry {
   , status :: HttpStatus
   , size :: Int
   } deriving (Show)
+
+getUrlFilename :: URL -> String
+getUrlFilename url = unpack (last (splitOn (pack "/") (pack url)))
 
 parseAccessLogEntry :: Parser AccessLogEntry
 parseAccessLogEntry = do { ip <- parseIP
