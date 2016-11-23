@@ -1,6 +1,6 @@
 module WebLogParse (parseAccessLogEntry,
                     run,
-                    AccessLogEntry,
+                    AccessLogEntry (user, time, request, status, size),
                     ErrorLogEntry,
                     IP,
                     UserID,
@@ -13,6 +13,7 @@ import qualified Text.ParserCombinators.Parsec.Token as Token
 import Text.Parsec.Language (haskellDef)
 import Data.Time
 import Data.Time.Format
+import Data.List (intercalate)
 
 -- Use the Parsec Language library to create a function for parsing identifiers (user names in the access logs)
 lexer = Token.makeTokenParser haskellDef
@@ -25,7 +26,7 @@ data HttpStatus = HttpStatus Int
                   deriving (Show)
 
 data UserID = UserID String
-              deriving (Show)
+              deriving (Ord, Eq, Show)
 
 {- The 'RequestMethod' data below is based on the 'Method' data in chapter 16 of Real World Haskell, 'Parsing an HTTP Request' section
 http://book.realworldhaskell.org/read/using-parsec.html
@@ -45,7 +46,7 @@ data ErrorLogEntry = ErrorLogEntry String
                      deriving (Show)
 
 data AccessLogEntry = AccessLogEntry {
-  ip :: IP
+  ip :: Maybe IP
   , user :: Maybe UserID
   , time :: UTCTime
   , request :: Request
@@ -66,9 +67,9 @@ parseAccessLogEntry = do { ip <- parseIP
                          ; spaces
                          ; status <- many1 digit
                          ; spaces
-                         ; size <- many1 digit
+                         ; size <- many1 digit <|> string "-"
                          ; return (AccessLogEntry ip user (parseEntryTime dateString) request (HttpStatus (read status :: Int)) (read size :: Int))
-                         }
+                         }              
 
 parseRequest :: Parser Request
 parseRequest = do { char '"'
@@ -107,17 +108,13 @@ parseMethod = do { try (string "GET")
                      }
               <?> "http request method"
 
-{- This 'parseIP' parser is based on the 'parseIP' parser from this blog post - https://www.schoolofhaskell.com/school/starting-with-haskell/libraries-and-frameworks/text-manipulation/attoparsec - modified to pass the IP address as a string to the IP data constructor -}
-parseIP :: Parser IP
-parseIP = do { n1 <- many1 digit
-             ; char '.'
-             ; n2 <- many1 digit
-             ; char '.'
-             ; n3 <- many1 digit
-             ; char '.'
-             ; n4 <- many1 digit
-             ; return (IP (n1 ++ "." ++ n2 ++ "." ++ n3 ++ "." ++ n4))
+parseIP :: Parser (Maybe IP)
+parseIP = do { ip <- try (sepBy1 (many1 digit) (char '.'))
+             ; return $ Just (IP (intercalate "." ip))
              }
+          <|> do { manyTill anyChar space
+                 ; return Nothing
+                 }
 
 parseDateString :: Parser String
 parseDateString = do { char '['
@@ -144,4 +141,5 @@ modified to return the value that is parsed, rather than IO
 run :: Show a => Parser a -> String -> a
 run p input
         = case (parse p "" input) of
-                        Right x  -> x
+                        Right x -> x
+                        Left x -> error ((show x) ++ input)
