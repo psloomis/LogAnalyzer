@@ -4,46 +4,43 @@ import System.Environment
 import Data.List (sortBy)
 import Data.Map (insertWith, fromList, toList)
 import Data.Maybe (fromJust, isJust)
+import Text.Printf
 
 main :: IO ()
 main = do
   (command:filename:xs) <- getArgs
   log <- readFile filename
   let entries = getEntries (lines log)
-  printAccessLogStats command entries
-
-printAccessLogStats :: String -> [AccessLogEntry] -> IO ()
-printAccessLogStats command entries = do
-  putStrLn "Access Log Stats"
   doCommand command entries
 
 doCommand :: String -> [AccessLogEntry] -> IO ()
 doCommand command entries
-    | command == "users" = users entries
-    | command == "files" = files entries
+    | command == "top_users" = topUsers entries
+    | command == "top_files" = topFiles entries
+    | command == "responses" = responseStats entries
         
 getEntries :: [String] -> [AccessLogEntry]
 getEntries loglines = map (run parseAccessLogEntry) loglines -- Common Log Format
 
-users :: [AccessLogEntry] -> IO ()
-users entries = do
+topUsers :: [AccessLogEntry] -> IO ()
+topUsers entries = do
   putStrLn "Most active users:"
-  let u = topUsers entries
+  let u = mostActiveUsers entries
   if u == []
   then putStrLn "No user information in logs"
   else mapM_ (\x -> putStrLn ((show (fst x)) ++ " made " ++ (show (snd x)) ++ " requests")) u
 
 {- Find the top 5 users who issued the most requests in the access log -}
-topUsers :: [AccessLogEntry] -> [(UserID, Int)]
-topUsers entries = take 5 (sortBy userCompare (toList userMap))
+mostActiveUsers :: [AccessLogEntry] -> [(UserID, Int)]
+mostActiveUsers entries = take 5 (sortBy userCompare (toList userMap))
     where userMap = foldl addUser (fromList []) entries
           userCompare (_,c1) (_,c2) | c1 < c2 = GT | c1 == c2 = EQ | otherwise = LT
           addUser m x = if isJust (user x)
                         then insertWith (+) (fromJust (user x)) 1 m
                         else m
 
-files :: [AccessLogEntry] -> IO ()
-files entries = do
+topFiles :: [AccessLogEntry] -> IO ()
+topFiles entries = do
   putStrLn "Most requested file:"
   let f = mostRequestedFile entries
   putStrLn ((show (fst f)) ++ " was requested " ++ (show (snd f)) ++ " times")
@@ -53,3 +50,17 @@ mostRequestedFile entries = (sortBy cmp (toList fileMap)) !! 0
     where fileMap = foldl updateMap (fromList []) entries
           cmp (_,c1) (_,c2) | c1 < c2 = GT | c1 == c2 = EQ | otherwise = LT
           updateMap m x = insertWith (+) (getUrlFilename (url (request x))) 1 m
+
+responseStats :: [AccessLogEntry] -> IO ()
+responseStats entries = do
+  putStrLn "HTTP response statuses by percentage:"
+  let counts = responseCounts entries
+  let totalResponses = foldl (\total x -> total + (snd x)) 0 counts
+  mapM_ (\x -> putStrLn ("status " ++ (show (fst x)) ++ ":\t" ++ (formatPercent (snd x) totalResponses) ++ "%")) counts
+
+formatPercent :: Double -> Double -> String
+formatPercent n d = printf "%.2f" (100 * (n / d))
+                    
+responseCounts :: [AccessLogEntry] -> [(Int, Double)]
+responseCounts entries = toList (foldl updateMap (fromList []) entries)
+    where updateMap m x = insertWith (+) (status x) 1.0 m

@@ -22,15 +22,9 @@ import Data.Text (pack, splitOn, unpack)
 lexer = Token.makeTokenParser haskellDef
 identifier = Token.identifier lexer
     
-data IP = IP String
-          deriving (Show)
-
-data HttpStatus = HttpStatus Int
-                  deriving (Show)
-
-data UserID = UserID String
-              deriving (Ord, Eq, Show)
-
+type IP = String
+type UserID = String
+type HttpStatus = Int
 type URL = String
 
 {- The 'RequestMethod' data below is based on the 'Method' data in chapter 16 of Real World Haskell, 'Parsing an HTTP Request' section
@@ -76,7 +70,7 @@ parseAccessLogEntry = do { ip <- parseIP
                          ; status <- many1 digit
                          ; spaces
                          ; size <- many1 digit <|> string "-"
-                         ; return (AccessLogEntry ip user (parseEntryTime dateString) request (HttpStatus (read status :: Int)) (read size :: Int))
+                         ; return (AccessLogEntry ip user (parseEntryTime dateString) request (read status :: Int) (read size :: Int))
                          }              
 
 parseRequest :: Parser Request
@@ -118,7 +112,7 @@ parseMethod = do { try (string "GET")
 
 parseIP :: Parser (Maybe IP)
 parseIP = do { ip <- try (sepBy1 (many1 digit) (char '.'))
-             ; return $ Just (IP (intercalate "." ip))
+             ; return $ Just (intercalate "." ip)
              }
           <|> do { manyTill anyChar space
                  ; return Nothing
@@ -135,7 +129,7 @@ parseEntryTime time = parseTimeOrError True defaultTimeLocale "%d/%b/%Y:%H:%M:%S
 
 parseUserID :: Parser (Maybe UserID)
 parseUserID = do { user <- identifier
-                 ; return $ Just (UserID user)
+                 ; return $ Just user
                  }
               <|> do { try (char '-')
                      ; return Nothing
