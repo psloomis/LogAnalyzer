@@ -3,24 +3,29 @@ import System.IO
 import System.Environment
 import Data.List (sortBy)
 import Data.Map (insertWith, fromList, toList)
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (fromJust, isJust, mapMaybe)
 import Text.Printf
 
 main :: IO ()
 main = do
   (command:filename:xs) <- getArgs
-  log <- readFile filename
+  h <- openFile filename ReadMode
+  hSetEncoding h utf8_bom
+  log <- hGetContents h
   let entries = getEntries (lines log)
   doCommand command entries
+
+commandHelp = "Available commands:\n 'top_files' - show the most requested files\n 'top_users' - show most active users\n 'responses' - http response percentages"
 
 doCommand :: String -> [AccessLogEntry] -> IO ()
 doCommand command entries
     | command == "top_users" = topUsers entries
     | command == "top_files" = topFiles entries
     | command == "responses" = responseStats entries
+    | otherwise = putStrLn ("invalid command: " ++ command ++ "\n" ++ commandHelp)
         
 getEntries :: [String] -> [AccessLogEntry]
-getEntries loglines = map (run parseAccessLogEntry) loglines -- Common Log Format
+getEntries loglines = mapMaybe (run parseAccessLogEntry) loglines -- Common Log Format
 
 topUsers :: [AccessLogEntry] -> IO ()
 topUsers entries = do
