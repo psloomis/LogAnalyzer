@@ -41,15 +41,17 @@ mostActiveUsers entries = take 5 (sortBy userCompare (toList userMap))
 
 topFiles :: [AccessLogEntry] -> IO ()
 topFiles entries = do
-  putStrLn "Most requested file:"
-  let f = mostRequestedFile entries
-  putStrLn ((show (fst f)) ++ " was requested " ++ (show (snd f)) ++ " times")
+  putStrLn "Most requested files:"
+  let files = mostRequestedFiles entries
+  mapM_ (\x -> putStrLn ((show (fst x)) ++ ": " ++ (show (snd x)) ++ " requests")) files
 
-mostRequestedFile :: [AccessLogEntry] -> (URL, Int)
-mostRequestedFile entries = (sortBy cmp (toList fileMap)) !! 0
+mostRequestedFiles :: [AccessLogEntry] -> [(URL, Int)]
+mostRequestedFiles entries = take 5 (sortBy cmp (toList fileMap))
     where fileMap = foldl updateMap (fromList []) entries
           cmp (_,c1) (_,c2) | c1 < c2 = GT | c1 == c2 = EQ | otherwise = LT
-          updateMap m x = insertWith (+) (getUrlFilename (url (request x))) 1 m
+          updateMap m x = if (getUrlFilename (url (request x))) == []
+                          then m
+                          else insertWith (+) (getUrlFilename (url (request x))) 1 m
 
 responseStats :: [AccessLogEntry] -> IO ()
 responseStats entries = do

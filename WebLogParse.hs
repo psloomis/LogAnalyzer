@@ -16,7 +16,7 @@ import Text.Parsec.Language (haskellDef)
 import Data.Time
 import Data.Time.Format
 import Data.List (intercalate)
-import Data.Text (pack, splitOn, unpack)
+import Data.Text (pack, splitOn, unpack, null)
 
 -- Use the Parsec Language library to create a function for parsing identifiers (user names in the access logs)
 lexer = Token.makeTokenParser haskellDef
@@ -54,7 +54,10 @@ data AccessLogEntry = AccessLogEntry {
   } deriving (Show)
 
 getUrlFilename :: URL -> String
-getUrlFilename url = unpack (last (splitOn (pack "/") (pack url)))
+getUrlFilename url = if path == []
+                     then []
+                     else unpack (last path)
+    where path = (filter (not . Data.Text.null) (splitOn (pack "/") (pack url)))
 
 parseAccessLogEntry :: Parser AccessLogEntry
 parseAccessLogEntry = do { ip <- parseIP
@@ -77,11 +80,17 @@ parseRequest :: Parser Request
 parseRequest = do { char '"'
                   ; m <- parseMethod
                   ; spaces
-                  ; url <- manyTill anyChar (try (string " HTTP/"))
-                  ; digit ; char '.' ; digit
-                  ; char '"'
+                  ; url <- manyTill anyChar (space *> protocol *> char '"' <|> char '"')
                   ; return (Request m url)
                   }
+
+protocol :: Parser String
+protocol = do { string "HTTP/"
+              ; many1 alphaNum
+              ; char '.'
+              ; digit
+              ; return ""
+              }
 
 parseMethod :: Parser RequestMethod
 parseMethod = do { try (string "GET")
