@@ -9,3 +9,4 @@
 The plot command produces a png image with a graph showing the number of HTTP Requests over time.
 For example, running `./analyzer plot calgary_access_log.log` will produce the following graph:
 
+![](https://goo.gl/photos/Fve1GPQX2txSwYzCA?raw=true)
