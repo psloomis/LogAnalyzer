@@ -4,7 +4,9 @@ import System.Environment
 import Data.List (sortBy)
 import Data.Map (insertWith, fromList, toList)
 import Data.Maybe (fromJust, isJust, mapMaybe)
+import Data.Time
 import Text.Printf
+import Graphics.EasyPlot
 
 main :: IO ()
 main = do
@@ -15,18 +17,32 @@ main = do
   let entries = getEntries (lines log)
   doCommand command entries
 
-commandHelp = "Available commands:\n 'top_files' - show the most requested files\n 'top_users' - show most active users\n 'responses' - http response percentages"
+commandHelp = "Available commands:\n 'top_files' - show the most requested files\n 'top_users' - show most active users\n 'responses' - http response percentages\n 'plot' - plot a graph of http requests over time"
 
 doCommand :: String -> [AccessLogEntry] -> IO ()
 doCommand command entries
     | command == "top_users" = topUsers entries
     | command == "top_files" = topFiles entries
     | command == "responses" = responseStats entries
+    | command == "plot" = plotRequests entries
     | otherwise = putStrLn ("invalid command: " ++ command ++ "\n" ++ commandHelp)
         
 getEntries :: [String] -> [AccessLogEntry]
 getEntries loglines = mapMaybe (run parseAccessLogEntry) loglines -- Common Log Format
 
+{- Plot a graph of requests over time, where each point represents the number of requests on a given day -}
+plotRequests :: [AccessLogEntry] -> IO ()
+plotRequests entries = do
+  let dayCounts = snd (unzip (requestsPerDay entries))
+  let listData = (zip ([1.0 .. (fromIntegral (length dayCounts))] :: [Double]) dayCounts)
+  plot (PNG "requests.png") $ Data2D [Title "Days since start (x axis) VS Number of HTTP Requests (y axis)", Style Lines, Color Red] [] (listData :: [(Double,Double)])
+  putStrLn "Plotting complete. Output graph in 'requests.png'"
+
+{- Get an association list with the number of requests on each day -}
+requestsPerDay :: [AccessLogEntry] -> [(Day, Double)]
+requestsPerDay entries = toList (foldl (\m x -> insertWith (+) (utctDay (time x)) 1 m) (fromList []) entries)
+
+{- Print the most active users in the web log -}
 topUsers :: [AccessLogEntry] -> IO ()
 topUsers entries = do
   putStrLn "Most active users:"
@@ -43,13 +59,15 @@ mostActiveUsers entries = take 5 (sortBy userCompare (toList userMap))
           addUser m x = if isJust (user x)
                         then insertWith (+) (fromJust (user x)) 1 m
                         else m
-
+                             
+{- Print the top 5 most requested static files -}
 topFiles :: [AccessLogEntry] -> IO ()
 topFiles entries = do
   putStrLn "Most requested files:"
   let files = mostRequestedFiles entries
   mapM_ (\x -> putStrLn ((show (fst x)) ++ ": " ++ (show (snd x)) ++ " requests")) files
 
+{- Find the most requested files -}
 mostRequestedFiles :: [AccessLogEntry] -> [(URL, Int)]
 mostRequestedFiles entries = take 5 (sortBy cmp (toList fileMap))
     where fileMap = foldl updateMap (fromList []) entries
@@ -58,6 +76,7 @@ mostRequestedFiles entries = take 5 (sortBy cmp (toList fileMap))
                           then m
                           else insertWith (+) (getUrlFilename (url (request x))) 1 m
 
+{- Print the percentage of each HTTP response out of all the types of responses -}
 responseStats :: [AccessLogEntry] -> IO ()
 responseStats entries = do
   putStrLn "HTTP response statuses by percentage:"
@@ -67,7 +86,8 @@ responseStats entries = do
 
 formatPercent :: Double -> Double -> String
 formatPercent n d = printf "%.2f" (100 * (n / d))
-                    
+
+{- Find the number of times each HTTP response is returned in the logs -}
 responseCounts :: [AccessLogEntry] -> [(Int, Double)]
 responseCounts entries = toList (foldl updateMap (fromList []) entries)
     where updateMap m x = insertWith (+) (status x) 1.0 m
