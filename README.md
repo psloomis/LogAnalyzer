@@ -1,6 +1,9 @@
 # Web Log Analyzer
 
+This is a command line application for analyzing web server logs. Depending on the command, the app will print or plot on a graph statistics about the input log file.
+
 ## Dependencies
+* [parsec](https://hackage.haskell.org/package/parsec)
 * [easyplot](https://hackage.haskell.org/package/easyplot-1.0/docs/Graphics-EasyPlot.html)
 * [GoogleChart](https://hackage.haskell.org/package/GoogleChart)
 
@@ -24,17 +27,17 @@ For example, running `./analyzer plot_req calgary_access_log.log` will produce t
 #### top_users
 The `top_users` command shows a list of the users who have made the most HTTP requests. For example, `./analyzer top_users calgary_access_log.log` will produce the following output:
 
-```
+<pre>
 Most active users:
 "Villain" made 37 requests
 "dasfh" made 1 requests
 "villain" made 1 requests
-```
+</pre>
 
 #### responses
 The `responses` command shows HTTP responses in the log file and each response's percentage of all the responses in the log file. For example, this command could tell you that 404s make up 17% of responses in the log file. Running `./analyzer responses calgary_access_log.log` will produce the following output:
 
-```
+<pre>
 HTTP response statuses by percentage:
 status 200:	78.41%
 status 302:	4.19%
@@ -45,19 +48,19 @@ status 403:	0.66%
 status 404:	3.24%
 status 500:	0.01%
 status 501:	0.01%
-```
+</pre>
 
 #### top_files
 The `top_files` command shows a list of the most requested static files and the number of times each was requested. For example, running `./analyzer top_files calgary_access_log.log` will produce the following output:
 
-```
+<pre>
 Most requested files:
 "index.html": 139503 requests
 "3.gif": 24006 requests
 "2.gif": 23595 requests
 "4.gif": 8018 requests
 "244.gif": 5148 requests
-```
+</pre>
 
 #### plot_users
 The `plot_users` command creates a line graph where each point represents the number of unique users during a given month. The `plot_users` command will create and output a link to this line graph.

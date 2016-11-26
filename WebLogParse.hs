@@ -147,7 +147,7 @@ parseUserID = do { user <- identifier
 
 {-
 From the 'Running a parser' section in the Parsec documentation - https://web.archive.org/web/20140529211116/http://legacy.cs.uu.nl/daan/download/parsec/parsec.html#identStart
-modified to return the value that is parsed, rather than IO
+modified to return a Maybe of the type that is parsed rather than IO
 -}
 run :: Show a => Parser a -> String -> Maybe a
 run p input
