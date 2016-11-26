@@ -1,5 +1,9 @@
 # Web Log Analyzer
 
+## Dependencies
+* [easyplot](https://hackage.haskell.org/package/easyplot-1.0/docs/Graphics-EasyPlot.html)
+* [GoogleChart](https://hackage.haskell.org/package/GoogleChart)
+
 ## Usage
 `ghc -o analyzer LogAnalyze.hs`
 
@@ -11,14 +15,14 @@
 ### Commands:
 The examples below use a log file, `calgary_access_log`, that I downloaded at [this link](http://ita.ee.lbl.gov/html/contrib/Calgary-HTTP.html) from the Internet Traffic Archive and converted to UTF-8.
 
-#### plot
-The plot command produces a png image with a graph showing the number of HTTP Requests over time.
-For example, running `./analyzer plot calgary_access_log.log` will produce the following image file:
+#### plot_req
+The `plot_req` command produces a png image with a graph showing the number of HTTP Requests over time.
+For example, running `./analyzer plot_req calgary_access_log.log` will produce the following image file:
 
 ![](https://s17.postimg.org/rk5uoomq7/requests.png?raw=true)
 
 #### top_users
-The top_users command shows a list of the users who have made the most HTTP requests. For example, `./analyzer top_users calgary_access_log.log` will produce the following output:
+The `top_users` command shows a list of the users who have made the most HTTP requests. For example, `./analyzer top_users calgary_access_log.log` will produce the following output:
 
 ```
 Most active users:
@@ -28,7 +32,7 @@ Most active users:
 ```
 
 #### responses
-The responses command shows HTTP responses in the log file and each response's percentage of all the responses in the log file. For example, this command could tell you that 404s make up 17% of responses in the log file. Running `./analyzer responses calgary_access_log.log` will produce the following output:
+The `responses` command shows HTTP responses in the log file and each response's percentage of all the responses in the log file. For example, this command could tell you that 404s make up 17% of responses in the log file. Running `./analyzer responses calgary_access_log.log` will produce the following output:
 
 ```
 HTTP response statuses by percentage:
@@ -44,7 +48,7 @@ status 501:	0.01%
 ```
 
 #### top_files
-The top_files command shows a list of the most requested static files and the number of times each was requested. For example, running `./analyzer top_files calgary_access_log.log` will produce the following output:
+The `top_files` command shows a list of the most requested static files and the number of times each was requested. For example, running `./analyzer top_files calgary_access_log.log` will produce the following output:
 
 ```
 Most requested files:
@@ -55,6 +59,5 @@ Most requested files:
 "244.gif": 5148 requests
 ```
 
-## Dependencies
-* [easyplot](https://hackage.haskell.org/package/easyplot-1.0/docs/Graphics-EasyPlot.html)
-* [GoogleChart](https://hackage.haskell.org/package/GoogleChart)
+#### plot_users
+The `plot_users` command creates a line graph where each point represents the number of unique users during a given month. The `plot_users` command will create and output a link to this line graph.
