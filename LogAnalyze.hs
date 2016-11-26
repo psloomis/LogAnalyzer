@@ -19,7 +19,7 @@ main = do
   let entries = getEntries (lines log)
   doCommand command entries
 
-commandHelp = "Available commands:\n 'top_files' - show the most requested files\n 'top_users' - show most active users\n 'responses' - http response percentages\n 'plot_req' - plot a graph of http requests over time"
+commandHelp = "Available commands:\n 'top_files' - show the most requested files\n 'top_users' - show most active users\n 'responses' - http response percentages\n 'plot_req' - plot a graph of http requests over time\n 'plot_users' - plot a line graph of unique monthly users"
 
 doCommand :: String -> [AccessLogEntry] -> IO ()
 doCommand command entries
