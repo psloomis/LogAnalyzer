@@ -1,4 +1,4 @@
-# Log Analyzer
+# Web Log Analyzer
 
 ## Usage
 `ghc -o analyzer LogAnalyze.hs`
@@ -54,3 +54,7 @@ Most requested files:
 "4.gif": 8018 requests
 "244.gif": 5148 requests
 ```
+
+## Dependencies
+* [easyplot](https://hackage.haskell.org/package/easyplot-1.0/docs/Graphics-EasyPlot.html)
+* [GoogleChart](https://hackage.haskell.org/package/GoogleChart)
